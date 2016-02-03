@@ -1,10 +1,20 @@
-import os
-from os import listdir, getcwd
-from os.path import join
+import sys
+from os import getcwd
+import os.path
 from PIL import Image
-sets=[('train'), ('val'),('test')]
 
-classes=["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42"]
+if len(sys.argv) > 1:
+    img_db_dir = os.path.abspath(sys.argv[1])
+    if not os.path.exists(img_db_dir):
+        print("Directory %s does not exist!" % img_db_dir)
+        sys.exit(1)
+else:
+    print("usage: python %s img_db_dir" % sys.argv[0])
+    sys.exit(1)
+
+sets=[('train', 720), ('val', 90),('test', 90)]
+
+classes = [("0" + str(i))[-2:] for i in range(43)]
 
 """
 the generated text files has to be in <object-class> <x> <y> <width> <height>
@@ -24,12 +34,12 @@ def convert(size, box):
     return (x,y,w,h)
 
 def get_image_size(image_number):
-    im=Image.open('Imgdb/FullIJCNN2013/%s'%image_number)
-    return im.size    
+    im=Image.open('%s/FullIJCNN2013/%s' %(img_db_dir, image_number))
+    return im.size
 
 def convert_txt(gt_row):
     out_file_name=gt_row[0].split(".")[0]+".txt"
-    with open('Imgdb/FullIJCNN2013/labels/%s'%(out_file_name),'w') as f:
+    with open('%s/FullIJCNN2013/labels/%s'%(img_db_dir, out_file_name),'w') as f:
         b=gt_row[1:5]
         size=get_image_size(gt_row[0])
         bb=convert(size,b)
@@ -37,11 +47,13 @@ def convert_txt(gt_row):
 
 wd = getcwd()
 
-for image_set in sets:
-    with open('Imgdb/%s/gt.txt'%(image_set)) as read_f:
-        for line in read_f:
-            gt_row=line.split(";")
-            for i in range (1,4):
-                gt_row[i]=int(gt_row[i])
-            convert_txt(gt_row)
-        
+with open('%s/FullIJCNN2013/gt.txt' % img_db_dir) as read_f:
+    for image_set, n in sets:
+        with open('%s/FullIJCNN2013/%s/%s_gt.txt' %(img_db_dir, image_set, image_set), 'w') as subset_gt:
+            for i in xrange(n):
+                line = read_f.next()
+                gt_row=line.split(";")
+                for i in range (1,4):
+                    gt_row[i]=int(gt_row[i])
+                convert_txt(gt_row)
+                subset_gt.write('%s/FullIJCNN2013/%s' % (img_db_dir, gt_row[0]))
