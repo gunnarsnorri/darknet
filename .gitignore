@@ -21,6 +21,7 @@ ehthumbs.db
 Icon?
 Thumbs.db
 *.swp
+.ropeproject/
 
 ##
 *~
